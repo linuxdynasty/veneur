@@ -11,6 +11,8 @@ import (
 	"github.com/stripe/veneur/samplers"
 )
 
+const Delimiter = '\t'
+const IncludeHeaders = false
 const PartitionDateFormat = "20060102"
 const RedshiftDateFormat = "2006-01-02 03:04:05"
 
