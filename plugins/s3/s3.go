@@ -1,10 +1,7 @@
 package s3
 
 import (
-	"bytes"
-	"compress/gzip"
 	"context"
-	"encoding/csv"
 	"errors"
 	"io"
 	"path"
@@ -30,13 +27,16 @@ type S3Plugin struct {
 	S3Bucket string
 	Hostname string
 	Interval int
+	Encoder  Encoder
+}
+
+
+type Encoder interface {
+	Encode(metrics []samplers.InterMetric, hostname string, interval int) (io.ReadSeeker, error)
 }
 
 func (p *S3Plugin) Flush(ctx context.Context, metrics []samplers.InterMetric) error {
-	const Delimiter = '\t'
-	const IncludeHeaders = false
-
-	csv, err := EncodeInterMetricsCSV(metrics, Delimiter, IncludeHeaders, p.Hostname, p.Interval)
+	csv, err := p.Encoder.Encode(metrics, p.Hostname, p.Interval)
 	if err != nil {
 		p.Logger.WithFields(logrus.Fields{
 			logrus.ErrorKey: err,
@@ -91,42 +91,4 @@ func S3Path(hostname string, ft filetype) *string {
 	t := time.Now()
 	filename := strconv.FormatInt(t.Unix(), 10) + "." + string(ft)
 	return aws.String(path.Join(t.Format("2006/01/02"), hostname, filename))
-}
-
-// EncodeInterMetricsCSV returns a reader containing the gzipped CSV representation of the
-// InterMetric data, one row per InterMetric.
-// the AWS sdk requires seekable input, so we return a ReadSeeker here
-func EncodeInterMetricsCSV(metrics []samplers.InterMetric, delimiter rune, includeHeaders bool, hostname string, interval int) (io.ReadSeeker, error) {
-	b := &bytes.Buffer{}
-	gzw := gzip.NewWriter(b)
-	w := csv.NewWriter(gzw)
-	w.Comma = delimiter
-
-	if includeHeaders {
-		// Write the headers first
-		headers := [...]string{
-			// the order here doesn't actually matter
-			// as long as the keys are right
-			TsvName:           TsvName.String(),
-			TsvTags:           TsvTags.String(),
-			TsvMetricType:     TsvMetricType.String(),
-			TsvInterval:       TsvInterval.String(),
-			TsvVeneurHostname: TsvVeneurHostname.String(),
-			TsvValue:          TsvValue.String(),
-			TsvTimestamp:      TsvTimestamp.String(),
-			TsvPartition:      TsvPartition.String(),
-		}
-
-		w.Write(headers[:])
-	}
-
-	// TODO avoid edge case at midnight
-	partitionDate := time.Now()
-	for _, metric := range metrics {
-		EncodeInterMetricCSV(metric, w, &partitionDate, hostname, interval)
-	}
-
-	w.Flush()
-	gzw.Close()
-	return bytes.NewReader(b.Bytes()), w.Error()
 }

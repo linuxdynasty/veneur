@@ -1,6 +1,9 @@
 package s3
 
 import (
+	"bytes"
+	"io"
+	"compress/gzip"
 	"encoding/csv"
 	"errors"
 	"fmt"
@@ -48,6 +51,15 @@ var tsvSchema = [...]string{
 	TsvPartition:      "Partition",
 }
 
+type CSVEncoder struct{
+    IncludeHeaders bool
+    Delimiter rune
+}
+
+func (c *CSVEncoder) Encode(metrics []samplers.InterMetric, hostname string, interval int) (io.ReadSeeker, error) {
+	return EncodeInterMetricsCSV(metrics, c.Delimiter, c.IncludeHeaders, hostname, interval)
+}
+
 // EncodeInterMetricCSV generates a newline-terminated CSV row that describes
 // the data represented by the InterMetric.
 // The caller is responsible for setting w.Comma as the appropriate delimiter.
@@ -90,6 +102,45 @@ func EncodeInterMetricCSV(d samplers.InterMetric, w *csv.Writer, partitionDate *
 	w.Write(fields[:])
 	return w.Error()
 }
+
+// EncodeInterMetricsCSV returns a reader containing the gzipped CSV representation of the
+// InterMetric data, one row per InterMetric.
+// the AWS sdk requires seekable input, so we return a ReadSeeker here
+func EncodeInterMetricsCSV(metrics []samplers.InterMetric, delimiter rune, includeHeaders bool, hostname string, interval int) (io.ReadSeeker, error) {
+	b := &bytes.Buffer{}
+	gzw := gzip.NewWriter(b)
+	w := csv.NewWriter(gzw)
+	w.Comma = delimiter
+
+	if includeHeaders {
+		// Write the headers first
+		headers := [...]string{
+			// the order here doesn't actually matter
+			// as long as the keys are right
+			TsvName:           TsvName.String(),
+			TsvTags:           TsvTags.String(),
+			TsvMetricType:     TsvMetricType.String(),
+			TsvInterval:       TsvInterval.String(),
+			TsvVeneurHostname: TsvVeneurHostname.String(),
+			TsvValue:          TsvValue.String(),
+			TsvTimestamp:      TsvTimestamp.String(),
+			TsvPartition:      TsvPartition.String(),
+		}
+
+		w.Write(headers[:])
+	}
+
+	// TODO avoid edge case at midnight
+	partitionDate := time.Now()
+	for _, metric := range metrics {
+		EncodeInterMetricCSV(metric, w, &partitionDate, hostname, interval)
+	}
+
+	w.Flush()
+	gzw.Close()
+	return bytes.NewReader(b.Bytes()), w.Error()
+}
+
 
 // String returns the field Name.
 // eg tsvName.String() returns "Name"
