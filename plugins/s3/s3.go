@@ -32,7 +32,7 @@ type S3Plugin struct {
 
 
 type Encoder interface {
-	Encode(metrics []samplers.InterMetric, hostName string, interval int) (io.ReadSeeker, error)
+	Encode(metrics []samplers.InterMetric, hostname string, interval int) (io.ReadSeeker, error)
 }
 
 func (p *S3Plugin) Flush(ctx context.Context, metrics []samplers.InterMetric) error {

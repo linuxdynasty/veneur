@@ -676,6 +676,15 @@ func NewFromConfig(logger *logrus.Logger, conf Config) (*Server, error) {
 	var svc s3iface.S3API
 	awsID := conf.AwsAccessKeyID
 	awsSecret := conf.AwsSecretAccessKey
+	var encoder interface{}
+	if conf.PluginsOutput == "tsdb" {
+		encoder := &s3p.TSDBEncoder{}
+	} else {
+		encoder := &s3p.CSVEncoder{
+			IncludeHeaders: false,
+			Delimeter: '\t',
+		}
+	}
 	if conf.AwsS3Bucket != "" {
 		if len(awsID) > 0 && len(awsSecret) > 0 {
 			sess, err := session.NewSession(&aws.Config{
@@ -694,6 +703,7 @@ func NewFromConfig(logger *logrus.Logger, conf Config) (*Server, error) {
 					Svc:      svc,
 					S3Bucket: conf.AwsS3Bucket,
 					Hostname: ret.Hostname,
+					Encoder: encoder,
 				}
 				ret.registerPlugin(plugin)
 			}
