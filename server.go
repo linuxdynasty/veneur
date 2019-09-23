@@ -683,15 +683,15 @@ func NewFromConfig(logger *logrus.Logger, conf Config) (*Server, error) {
 	var svc s3iface.S3API
 	awsID := conf.AwsAccessKeyID
 	awsSecret := conf.AwsSecretAccessKey
-	var encoder interface{}
+	var encoder s3p.Encoder
 	if conf.PluginsOutput == "tsdb" {
-		encoder := &s3p.TSDBEncoder{}
+		encoder = &s3p.TSDBEncoder{}
 	} else if conf.PluginsOutput == "wavefront" {
-		encoder := &s3p.WaveFrontEncoder{}
+		encoder = &s3p.WaveFrontEncoder{}
 	} else {
-		encoder := &s3p.CSVEncoder{
+		encoder = &s3p.CSVEncoder{
 			IncludeHeaders: false,
-			Delimeter:      '\t',
+			Delimiter:      '\t',
 		}
 	}
 	if conf.AwsS3Bucket != "" {

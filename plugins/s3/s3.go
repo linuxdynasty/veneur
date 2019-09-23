@@ -27,9 +27,8 @@ type S3Plugin struct {
 	S3Bucket string
 	Hostname string
 	Interval int
-	Encoder  Encoder
+	Encoder
 }
-
 
 type Encoder interface {
 	Encode(metrics []samplers.InterMetric, hostname string, interval int) (io.ReadSeeker, error)
