@@ -2,11 +2,11 @@ package s3
 
 import (
 	"bytes"
-	"io"
 	"compress/gzip"
 	"encoding/csv"
 	"errors"
 	"fmt"
+	"io"
 	"strconv"
 	"strings"
 	"time"
@@ -51,13 +51,22 @@ var tsvSchema = [...]string{
 	TsvPartition:      "Partition",
 }
 
-type CSVEncoder struct{
-    IncludeHeaders bool
-    Delimiter rune
+type CSVEncoder struct {
+	IncludeHeaders    bool
+	Delimiter         rune
+	FileNameType      string
+	FileNameExtension string
+	FileNameStructure string
+	Compress          bool
 }
 
 func (c *CSVEncoder) Encode(metrics []samplers.InterMetric, hostname string, interval int) (io.ReadSeeker, error) {
-	return EncodeInterMetricsCSV(metrics, c.Delimiter, c.IncludeHeaders, hostname, interval)
+	return EncodeInterMetricsCSV(metrics, c.Delimiter, c.IncludeHeaders, hostname, interval, c.Compress)
+}
+
+func (c *CSVEncoder) KeyName(hostname string) (string, error) {
+	tNow := time.Now()
+	return KeyName(hostname, c.FileNameStructure, c.FileNameType, c.FileNameExtension, c.Compress, tNow)
 }
 
 // EncodeInterMetricCSV generates a newline-terminated CSV row that describes
@@ -106,10 +115,16 @@ func EncodeInterMetricCSV(d samplers.InterMetric, w *csv.Writer, partitionDate *
 // EncodeInterMetricsCSV returns a reader containing the gzipped CSV representation of the
 // InterMetric data, one row per InterMetric.
 // the AWS sdk requires seekable input, so we return a ReadSeeker here
-func EncodeInterMetricsCSV(metrics []samplers.InterMetric, delimiter rune, includeHeaders bool, hostname string, interval int) (io.ReadSeeker, error) {
+func EncodeInterMetricsCSV(metrics []samplers.InterMetric, delimiter rune, includeHeaders bool, hostname string, interval int, compress bool) (io.ReadSeeker, error) {
 	b := &bytes.Buffer{}
-	gzw := gzip.NewWriter(b)
-	w := csv.NewWriter(gzw)
+	var w *csv.Writer
+	var gzw *gzip.Writer
+	if compress == true {
+		gzw = gzip.NewWriter(b)
+		w = csv.NewWriter(gzw)
+	} else {
+		w = csv.NewWriter(b)
+	}
 	w.Comma = delimiter
 
 	if includeHeaders {
@@ -135,12 +150,13 @@ func EncodeInterMetricsCSV(metrics []samplers.InterMetric, delimiter rune, inclu
 	for _, metric := range metrics {
 		EncodeInterMetricCSV(metric, w, &partitionDate, hostname, interval)
 	}
-
 	w.Flush()
-	gzw.Close()
+	if compress == true {
+		gzw.Close()
+	}
+
 	return bytes.NewReader(b.Bytes()), w.Error()
 }
-
 
 // String returns the field Name.
 // eg tsvName.String() returns "Name"

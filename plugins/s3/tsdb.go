@@ -2,9 +2,11 @@ package s3
 
 import (
 	"bytes"
+	"compress/gzip"
 	"fmt"
 	"io"
 	"strings"
+	"time"
 
 	"github.com/golang/protobuf/proto"
 	dto "github.com/prometheus/client_model/go"
@@ -12,10 +14,20 @@ import (
 	"github.com/stripe/veneur/samplers"
 )
 
-type TSDBEncoder struct{}
+type TSDBEncoder struct {
+	FileNameType      string
+	FileNameExtension string
+	FileNameStructure string
+	Compress          bool
+}
 
 func (t *TSDBEncoder) Encode(metrics []samplers.InterMetric, _hostName string, interval int) (io.ReadSeeker, error) {
-	return EncodeInterMetricsTSDB(metrics, interval)
+	return EncodeInterMetricsTSDB(metrics, interval, t.Compress)
+}
+
+func (t *TSDBEncoder) KeyName(hostname string) (string, error) {
+	tNow := time.Now()
+	return KeyName(hostname, t.FileNameStructure, t.FileNameType, t.FileNameExtension, t.Compress, tNow)
 }
 
 func createTSDBLabelPairs(tags []string) (label []*dto.LabelPair, err error) {
@@ -63,7 +75,7 @@ func createTSDBMetric(metricType dto.MetricType, metricValue float64, metricName
 	return metric, err
 }
 
-func EncodeInterMetricTSDB(d samplers.InterMetric, out *bytes.Buffer, interval int) error {
+func EncodeInterMetricTSDB(d samplers.InterMetric, out io.Writer, interval int) error {
 	labelPairs, err := createTSDBLabelPairs(d.Tags)
 	if err != nil {
 		return err
@@ -91,11 +103,18 @@ func EncodeInterMetricTSDB(d samplers.InterMetric, out *bytes.Buffer, interval i
 	return err
 }
 
-func EncodeInterMetricsTSDB(metrics []samplers.InterMetric, interval int) (io.ReadSeeker, error) {
+func EncodeInterMetricsTSDB(metrics []samplers.InterMetric, interval int, compress bool) (io.ReadSeeker, error) {
 	out := &bytes.Buffer{}
 	var err error
 	for _, metric := range metrics {
-		err = EncodeInterMetricTSDB(metric, out, interval)
+		if compress == true {
+			gzw := gzip.NewWriter(out)
+			err = EncodeInterMetricTSDB(metric, gzw, interval)
+			gzw.Flush()
+			gzw.Close()
+		} else {
+			err = EncodeInterMetricTSDB(metric, out, interval)
+		}
 	}
 	return bytes.NewReader(out.Bytes()), err
 }

@@ -2,9 +2,11 @@ package s3
 
 import (
 	"bytes"
+	"compress/gzip"
 	"fmt"
 	"io"
 	"strings"
+	"time"
 
 	"github.com/stripe/veneur/samplers"
 )
@@ -23,10 +25,20 @@ func (w *WaveFrontMetricLine) String() string {
 	return fmt.Sprintf("%s %.2f %d source=%s %s\n", w.Name, w.Value, w.TimeStamp, w.Source, w.PointTags)
 }
 
-type WaveFrontEncoder struct{}
+type WaveFrontEncoder struct {
+	FileNameType      string
+	FileNameExtension string
+	FileNameStructure string
+	Compress          bool
+}
 
 func (w *WaveFrontEncoder) Encode(metrics []samplers.InterMetric, hostName string, interval int) (io.ReadSeeker, error) {
-	return EncodeInterMetricsWaveFront(metrics, hostName, interval)
+	return EncodeInterMetricsWaveFront(metrics, hostName, interval, w.Compress)
+}
+
+func (w *WaveFrontEncoder) KeyName(hostname string) (string, error) {
+	tNow := time.Now()
+	return KeyName(hostname, w.FileNameStructure, w.FileNameType, w.FileNameExtension, w.Compress, tNow)
 }
 
 func createPointTags(tags []string) (pointTags string, err error) {
@@ -42,7 +54,7 @@ func createPointTags(tags []string) (pointTags string, err error) {
 	return pointTags, err
 }
 
-func EncodeInterMetricWaveFront(d samplers.InterMetric, out *bytes.Buffer, hostName string, interval int) error {
+func EncodeInterMetricWaveFront(d samplers.InterMetric, out io.Writer, hostName string, interval int) error {
 	tags, err := createPointTags(d.Tags)
 	if err != nil {
 		return err
@@ -61,11 +73,18 @@ func EncodeInterMetricWaveFront(d samplers.InterMetric, out *bytes.Buffer, hostN
 	return err
 }
 
-func EncodeInterMetricsWaveFront(metrics []samplers.InterMetric, hostName string, interval int) (io.ReadSeeker, error) {
+func EncodeInterMetricsWaveFront(metrics []samplers.InterMetric, hostName string, interval int, compress bool) (io.ReadSeeker, error) {
 	out := &bytes.Buffer{}
 	var err error
 	for _, metric := range metrics {
-		err = EncodeInterMetricWaveFront(metric, out, hostName, interval)
+		if compress == true {
+			gzw := gzip.NewWriter(out)
+			err = EncodeInterMetricWaveFront(metric, gzw, hostName, interval)
+			gzw.Flush()
+			gzw.Close()
+		} else {
+			err = EncodeInterMetricWaveFront(metric, out, hostName, interval)
+		}
 	}
 	return bytes.NewReader(out.Bytes()), err
 }

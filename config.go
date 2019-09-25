@@ -66,6 +66,8 @@ type Config struct {
 	OmitEmptyHostname                         bool      `yaml:"omit_empty_hostname"`
 	Percentiles                               []float64 `yaml:"percentiles"`
 	PluginsOutput                             string    `yaml:"plugins_output"`
+	PluginsOutputCompressed                   bool      `yaml:"plugins_output_compressed"`
+	PluginsOutputFileNameStructure            string    `yaml:"plugins_output_file_name_structure"`
 	ReadBufferSizeBytes                       int       `yaml:"read_buffer_size_bytes"`
 	SentryDsn                                 string    `yaml:"sentry_dsn"`
 	SignalfxAPIKey                            string    `yaml:"signalfx_api_key"`

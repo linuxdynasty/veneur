@@ -2,6 +2,7 @@ package s3
 
 import (
 	"bytes"
+	"compress/gzip"
 	"fmt"
 	"io"
 	"strings"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stripe/veneur/samplers"
+	. "github.com/stripe/veneur/testhelpers"
 )
 
 type WaveFrontTestCase struct {
@@ -74,6 +76,65 @@ func TestEncodeWaveFront(t *testing.T) {
 			assert.NoError(t, err)
 
 			assertReadersEqual(t, tc.Row, b)
+		})
+	}
+}
+
+func TestEncodeMetricsWaveFrontCompressed(t *testing.T) {
+	const VeneurHostname = "testbox-c3eac9"
+
+	testCases := WaveFrontTestCases()
+
+	metrics := make([]samplers.InterMetric, len(testCases))
+	for i, tc := range testCases {
+		metrics[i] = tc.InterMetric
+	}
+
+	out, err := EncodeInterMetricsWaveFront(metrics, VeneurHostname, 10, true)
+	assert.NoError(t, err)
+
+	gzr, err := gzip.NewReader(out)
+	assert.NoError(t, err)
+
+	var resB bytes.Buffer
+	_, err = resB.ReadFrom(gzr)
+	assert.NoError(t, err)
+
+	WaveFrontMatchRecords(resB, metrics, testCases, t)
+}
+
+func TestEncodeMetricsWaveFrontUnCompressed(t *testing.T) {
+	testCases := WaveFrontTestCases()
+	const VeneurHostname = "testbox-c3eac9"
+
+	metrics := make([]samplers.InterMetric, len(testCases))
+	for i, tc := range testCases {
+		metrics[i] = tc.InterMetric
+	}
+
+	out, err := EncodeInterMetricsWaveFront(metrics, VeneurHostname, 10, false)
+	assert.NoError(t, err)
+
+	var resB bytes.Buffer
+	_, err = resB.ReadFrom(out)
+	assert.NoError(t, err)
+
+	WaveFrontMatchRecords(resB, metrics, testCases, t)
+}
+
+func WaveFrontMatchRecords(resB bytes.Buffer, metrics []samplers.InterMetric, testCases []WaveFrontTestCase, t *testing.T) {
+	listRecords := strings.Split(resB.String(), "\n")
+	listRecords = listRecords[:len(listRecords)-1]
+	for i, rec := range listRecords {
+		t.Logf("record #%d: %s", i, rec)
+	}
+	t.Log(len(listRecords))
+
+	assert.Equal(t, len(metrics), len(listRecords), "Expected %d records and got %d", len(metrics), len(listRecords))
+	for i, tc := range testCases {
+		record := listRecords[i] + "\n"
+		t.Run(tc.Name, func(t *testing.T) {
+			AssertReadersEqual(t, testCases[i].Row, strings.NewReader(record))
 		})
 	}
 }
