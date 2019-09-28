@@ -689,12 +689,14 @@ func NewFromConfig(logger *logrus.Logger, conf Config) (*Server, error) {
 			FileNameExtension: "",
 			Compress:          conf.PluginsOutputCompressed,
 			FileNameStructure: conf.PluginsOutputFileNameStructure,
+			FileNameType:      conf.PluginsOutputNameType,
 		}
 	} else if conf.PluginsOutput == "wavefront" {
 		encoder = &s3p.WaveFrontEncoder{
 			FileNameExtension: "",
 			Compress:          conf.PluginsOutputCompressed,
 			FileNameStructure: conf.PluginsOutputFileNameStructure,
+			FileNameType:      conf.PluginsOutputNameType,
 		}
 	} else {
 		encoder = &s3p.CSVEncoder{
@@ -703,6 +705,7 @@ func NewFromConfig(logger *logrus.Logger, conf Config) (*Server, error) {
 			FileNameExtension: "tsv",
 			Compress:          conf.PluginsOutputCompressed,
 			FileNameStructure: conf.PluginsOutputFileNameStructure,
+			FileNameType:      conf.PluginsOutputNameType,
 		}
 	}
 	if conf.AwsS3Bucket != "" {

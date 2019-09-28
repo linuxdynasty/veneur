@@ -18,7 +18,7 @@ var defaultConfig = Config{
 	MetricMaxLength:                4096,
 	PluginsOutput:                  "csv",
 	PluginsOutputCompressed:        true,
-	PluginsOutputFileNameStructure: "date_host",
+	PluginsOutputNameType:          "timestamp",
 	ReadBufferSizeBytes:            1048576 * 2, // 2 MiB
 	SpanChannelCapacity:            100,
 	SplunkHecBatchSize:             100,
@@ -168,8 +168,8 @@ func (c *Config) applyDefaults() {
 	if c.PluginsOutput == "" {
 		c.PluginsOutput = defaultConfig.PluginsOutput
 	}
-	if c.PluginsOutputFileNameStructure == "" {
-		c.PluginsOutputFileNameStructure = defaultConfig.PluginsOutputFileNameStructure
+	if c.PluginsOutputNameType == "" {
+		c.PluginsOutputNameType = defaultConfig.PluginsOutputNameType
 	}
 	if c.ReadBufferSizeBytes == 0 {
 		c.ReadBufferSizeBytes = defaultConfig.ReadBufferSizeBytes
