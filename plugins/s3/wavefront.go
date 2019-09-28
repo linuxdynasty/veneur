@@ -32,7 +32,7 @@ type WaveFrontEncoder struct {
 	Compress          bool
 }
 
-func (w *WaveFrontEncoder) Encode(metrics []samplers.InterMetric, hostName string, interval int) (io.ReadSeeker, error) {
+func (w *WaveFrontEncoder) Encode(metrics []samplers.InterMetric, hostName string, interval float64) (io.ReadSeeker, error) {
 	return EncodeInterMetricsWaveFront(metrics, hostName, interval, w.Compress)
 }
 
@@ -54,7 +54,7 @@ func createPointTags(tags []string) (pointTags string, err error) {
 	return pointTags, err
 }
 
-func EncodeInterMetricWaveFront(d samplers.InterMetric, out io.Writer, hostName string, interval int) error {
+func EncodeInterMetricWaveFront(d samplers.InterMetric, out io.Writer, hostName string, interval float64) error {
 	tags, err := createPointTags(d.Tags)
 	if err != nil {
 		return err
@@ -67,13 +67,13 @@ func EncodeInterMetricWaveFront(d samplers.InterMetric, out io.Writer, hostName 
 		PointTags: tags,
 	}
 	if d.Type == samplers.CounterMetric {
-		metric.Value = d.Value / float64(interval)
+		metric.Value = d.Value / interval
 	}
 	out.Write([]byte(metric.String()))
 	return err
 }
 
-func EncodeInterMetricsWaveFront(metrics []samplers.InterMetric, hostName string, interval int, compress bool) (io.ReadSeeker, error) {
+func EncodeInterMetricsWaveFront(metrics []samplers.InterMetric, hostName string, interval float64, compress bool) (io.ReadSeeker, error) {
 	out := &bytes.Buffer{}
 	var err error
 	for _, metric := range metrics {

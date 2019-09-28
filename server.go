@@ -734,6 +734,7 @@ func NewFromConfig(logger *logrus.Logger, conf Config) (*Server, error) {
 				S3Bucket: conf.AwsS3Bucket,
 				Hostname: ret.Hostname,
 				Encoder:  encoder,
+				Interval: ret.interval.Seconds(),
 			}
 			ret.registerPlugin(plugin)
 		}

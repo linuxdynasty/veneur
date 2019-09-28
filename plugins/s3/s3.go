@@ -26,12 +26,12 @@ type S3Plugin struct {
 	Svc      s3iface.S3API
 	S3Bucket string
 	Hostname string
-	Interval int
+	Interval float64
 	Encoder
 }
 
 type Encoder interface {
-	Encode(metrics []samplers.InterMetric, hostname string, interval int) (io.ReadSeeker, error)
+	Encode(metrics []samplers.InterMetric, hostname string, interval float64) (io.ReadSeeker, error)
 	KeyName(hostname string) (string, error)
 }
 

@@ -21,7 +21,7 @@ type TSDBEncoder struct {
 	Compress          bool
 }
 
-func (t *TSDBEncoder) Encode(metrics []samplers.InterMetric, _hostName string, interval int) (io.ReadSeeker, error) {
+func (t *TSDBEncoder) Encode(metrics []samplers.InterMetric, _hostName string, interval float64) (io.ReadSeeker, error) {
 	return EncodeInterMetricsTSDB(metrics, interval, t.Compress)
 }
 
@@ -75,7 +75,7 @@ func createTSDBMetric(metricType dto.MetricType, metricValue float64, metricName
 	return metric, err
 }
 
-func EncodeInterMetricTSDB(d samplers.InterMetric, out io.Writer, interval int) error {
+func EncodeInterMetricTSDB(d samplers.InterMetric, out io.Writer, interval float64) error {
 	labelPairs, err := createTSDBLabelPairs(d.Tags)
 	if err != nil {
 		return err
@@ -85,7 +85,7 @@ func EncodeInterMetricTSDB(d samplers.InterMetric, out io.Writer, interval int) 
 	metricName := d.Name
 	switch d.Type {
 	case samplers.CounterMetric:
-		metricValue = d.Value / float64(interval)
+		metricValue = d.Value / interval
 		metricType = dto.MetricType_COUNTER
 	case samplers.GaugeMetric:
 		metricType = dto.MetricType_GAUGE
@@ -103,7 +103,7 @@ func EncodeInterMetricTSDB(d samplers.InterMetric, out io.Writer, interval int) 
 	return err
 }
 
-func EncodeInterMetricsTSDB(metrics []samplers.InterMetric, interval int, compress bool) (io.ReadSeeker, error) {
+func EncodeInterMetricsTSDB(metrics []samplers.InterMetric, interval float64, compress bool) (io.ReadSeeker, error) {
 	out := &bytes.Buffer{}
 	var err error
 	for _, metric := range metrics {
