@@ -85,15 +85,20 @@ func EncodeInterMetricWaveFront(d samplers.InterMetric, out io.Writer, hostName 
 func EncodeInterMetricsWaveFront(metrics []samplers.InterMetric, hostName string, interval float64, compress bool) (io.ReadSeeker, error) {
 	out := &bytes.Buffer{}
 	var err error
+	var gzw *gzip.Writer
+	if compress == true {
+		gzw = gzip.NewWriter(out)
+	}
 	for _, metric := range metrics {
 		if compress == true {
-			gzw := gzip.NewWriter(out)
 			err = EncodeInterMetricWaveFront(metric, gzw, hostName, interval)
-			gzw.Flush()
-			gzw.Close()
 		} else {
 			err = EncodeInterMetricWaveFront(metric, out, hostName, interval)
 		}
+	}
+	if compress == true {
+		gzw.Flush()
+		gzw.Close()
 	}
 	return bytes.NewReader(out.Bytes()), err
 }
