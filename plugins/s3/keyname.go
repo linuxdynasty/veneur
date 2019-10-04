@@ -36,14 +36,16 @@ func ValidFolderStructures() [2]string {
 	return [2]string{"date_host", "none"}
 }
 
+// TimeStampName returns the unix timestamp string with a file extension.
 func TimeStampName(t time.Time, ft string) string {
 	if ft == "" {
 		return strconv.FormatInt(t.Unix(), 10)
 	} else {
-		return strconv.FormatInt(t.Unix(), 10) + "." + string(ft)
+		return strconv.FormatInt(t.Unix(), 10) + "." + ft
 	}
 }
 
+// UUIDName returns the uuid string with a file extension.
 func UUIDName(ft string) (string, error) {
 	uuid, err := uuid.NewV4()
 	if err != nil {
@@ -52,10 +54,11 @@ func UUIDName(ft string) (string, error) {
 	if ft == "" {
 		return uuid.String(), err
 	} else {
-		return fmt.Sprintf("%s.%s", uuid.String(), string(ft)), err
+		return fmt.Sprintf("%s.%s", uuid.String(), ft), err
 	}
 }
 
+// KeyName creates the name of the key that will be stored in s3 and returns the formatted key and an error.
 func KeyName(hostname, fileNameStructure, fileNameType, fileNameExtension string, compress bool, tNow time.Time) (string, error) {
 	var fullPath string
 	var keyName string

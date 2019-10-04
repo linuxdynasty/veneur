@@ -51,19 +51,22 @@ var tsvSchema = [...]string{
 	TsvPartition:      "Partition",
 }
 
+// CVSEncoder represents a CSV and its extensions and how it will be stored.
 type CSVEncoder struct {
-	IncludeHeaders    bool
-	Delimiter         rune
-	FileNameType      string
-	FileNameExtension string
-	FileNameStructure string
-	Compress          bool
+	IncludeHeaders    bool   // Include headers in the CSV file.
+	Delimiter         rune   // Any type of delimiter to use in a CSV.
+	FileNameType      string // Either uuid or timestamp.
+	FileNameExtension string // `.csv` or `.tsv`
+	FileNameStructure string // `date_time` or `""`.
+	Compress          bool   // Compress and add `.gz` extension.
 }
 
+// Encode is an interface to EncodeInterMetricsCSV
 func (c *CSVEncoder) Encode(metrics []samplers.InterMetric, hostname string, interval float64) (io.ReadSeeker, error) {
 	return EncodeInterMetricsCSV(metrics, c.Delimiter, c.IncludeHeaders, hostname, interval, c.Compress)
 }
 
+// KeyName is an interface to KeyName
 func (c *CSVEncoder) KeyName(hostname string) (string, error) {
 	tNow := time.Now()
 	return KeyName(hostname, c.FileNameStructure, c.FileNameType, c.FileNameExtension, c.Compress, tNow)
@@ -112,7 +115,7 @@ func EncodeInterMetricCSV(d samplers.InterMetric, w *csv.Writer, partitionDate *
 	return w.Error()
 }
 
-// EncodeInterMetricsCSV returns a reader containing the gzipped CSV representation of the
+// EncodeInterMetricsCSV returns a reader containing either the gzipped or plain text CSV representation of the
 // InterMetric data, one row per InterMetric.
 // the AWS sdk requires seekable input, so we return a ReadSeeker here
 func EncodeInterMetricsCSV(metrics []samplers.InterMetric, delimiter rune, includeHeaders bool, hostname string, interval float64, compress bool) (io.ReadSeeker, error) {

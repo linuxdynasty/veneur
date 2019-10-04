@@ -14,22 +14,27 @@ import (
 	"github.com/stripe/veneur/samplers"
 )
 
+// TSDBEncoder represents a tsdb file and its extensions and how it will be stored.
 type TSDBEncoder struct {
-	FileNameType      string
-	FileNameExtension string
-	FileNameStructure string
-	Compress          bool
+	FileNameType      string // Either uuid or timestamp.
+	FileNameExtension string // `.tsdb` or `""`
+	FileNameStructure string // `date_time` or `""`.
+	Compress          bool   // Compress and add `.gz` extension
 }
 
+// Encode is an interface to EncodeInterMetricsTSDB
 func (t *TSDBEncoder) Encode(metrics []samplers.InterMetric, _hostName string, interval float64) (io.ReadSeeker, error) {
 	return EncodeInterMetricsTSDB(metrics, interval, t.Compress)
 }
 
+// KeyName is an interface to KeyName
 func (t *TSDBEncoder) KeyName(hostname string) (string, error) {
 	tNow := time.Now()
 	return KeyName(hostname, t.FileNameStructure, t.FileNameType, t.FileNameExtension, t.Compress, tNow)
 }
 
+// createTSDBLabelPairs formats the list of strings that are formatted as json tags into a TSDB Label Pair.
+// Example of list of strings that can be passed. ['{"Foo": "Bar"}'].
 func createTSDBLabelPairs(tags []string) (label []*dto.LabelPair, err error) {
 	for _, keyPair := range tags {
 		tag := strings.Split(keyPair, ":")
@@ -45,6 +50,7 @@ func createTSDBLabelPairs(tags []string) (label []*dto.LabelPair, err error) {
 	return label, err
 }
 
+// createTSDBMetric creates the tsdb formatted metric and returns it in *dto.MetricFamily and error.
 func createTSDBMetric(metricType dto.MetricType, metricValue float64, metricName string, labelPairs []*dto.LabelPair) (*dto.MetricFamily, error) {
 	var err error
 	metric := &dto.MetricFamily{
@@ -75,6 +81,10 @@ func createTSDBMetric(metricType dto.MetricType, metricValue float64, metricName
 	return metric, err
 }
 
+// EncodeInterMetricTSDB will encode one metric at a time and write it out to the io.writer
+// in plain text in the expected tsdb format and terminated with a newline.
+// For performance, encodeInterMetricTSDB does not flush after every call; the caller is
+// expected to flush at the end of the operation cycle.
 func EncodeInterMetricTSDB(d samplers.InterMetric, out io.Writer, interval float64) error {
 	labelPairs, err := createTSDBLabelPairs(d.Tags)
 	if err != nil {
@@ -103,6 +113,9 @@ func EncodeInterMetricTSDB(d samplers.InterMetric, out io.Writer, interval float
 	return err
 }
 
+// EncodeInterMetricsTSDB returns a reader containing either the gzipped or plain text representation of the
+// InterMetric data, one row per InterMetric.
+// the AWS sdk requires seekable input, so we return a ReadSeeker here.
 func EncodeInterMetricsTSDB(metrics []samplers.InterMetric, interval float64, compress bool) (io.ReadSeeker, error) {
 	out := &bytes.Buffer{}
 	var err error
