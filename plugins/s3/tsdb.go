@@ -119,15 +119,20 @@ func EncodeInterMetricTSDB(d samplers.InterMetric, out io.Writer, interval float
 func EncodeInterMetricsTSDB(metrics []samplers.InterMetric, interval float64, compress bool) (io.ReadSeeker, error) {
 	out := &bytes.Buffer{}
 	var err error
+	var gzw *gzip.Writer
+	if compress == true {
+		gzw = gzip.NewWriter(out)
+	}
 	for _, metric := range metrics {
 		if compress == true {
-			gzw := gzip.NewWriter(out)
 			err = EncodeInterMetricTSDB(metric, gzw, interval)
-			gzw.Flush()
-			gzw.Close()
 		} else {
 			err = EncodeInterMetricTSDB(metric, out, interval)
 		}
+	}
+	if compress == true {
+		gzw.Flush()
+		gzw.Close()
 	}
 	return bytes.NewReader(out.Bytes()), err
 }

@@ -155,6 +155,7 @@ func EncodeInterMetricsCSV(metrics []samplers.InterMetric, delimiter rune, inclu
 	}
 	w.Flush()
 	if compress == true {
+		gzw.Flush()
 		gzw.Close()
 	}
 

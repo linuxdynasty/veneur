@@ -271,7 +271,7 @@ func (g *Gauge) Combine(other []byte) error {
 		return err
 	}
 
-	g.value += otherValue
+	g.value = otherValue
 
 	return nil
 }
@@ -295,7 +295,7 @@ func (g *Gauge) Metric() (*metricpb.Metric, error) {
 
 // Merge sets the value of this Gauge to the value of the other.
 func (g *Gauge) Merge(v *metricpb.GaugeValue) {
-	g.value += v.Value
+	g.value = v.Value
 }
 
 // NewGauge generates an empty (valueless) Gauge

@@ -76,6 +76,7 @@ func (p *S3Plugin) S3Post(hostname string, data io.ReadSeeker) error {
 		Bucket: aws.String(p.S3Bucket),
 		Key:    aws.String(keyName),
 		Body:   data,
+		ACL:    aws.String("bucket-owner-full-control"),
 	}
 
 	_, err = p.Svc.PutObject(params)
