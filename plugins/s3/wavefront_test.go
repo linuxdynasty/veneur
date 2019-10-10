@@ -35,6 +35,18 @@ func WaveFrontTestCases() []WaveFrontTestCase {
 			Row: strings.NewReader(fmt.Sprintf("a.b.c.max 100.00 1476119058 source=testbox-c3eac9 foo=\"bar\" baz=\"quz\"\n")),
 		},
 		{
+			Name: "BasicGaugeMetricWithCrazyTagValues",
+			InterMetric: samplers.InterMetric{
+				Name:      "a.b.c.max",
+				Timestamp: 1476119058,
+				Value:     float64(100),
+				Tags: []string{"foo:bar",
+					"baz:quz", "msg: CounterMetric: event.http_status_non200s([fake_url])"},
+				Type: samplers.GaugeMetric,
+			},
+			Row: strings.NewReader(fmt.Sprintf("a.b.c.max 100.00 1476119058 source=testbox-c3eac9 foo=\"bar\" baz=\"quz\" msg=\" CounterMetric: event.http_status_non200s([fake_url])\"\n")),
+		},
+		{
 			Name: "BasicCounterMetric",
 			InterMetric: samplers.InterMetric{
 				Name:      "a.b.c.max",

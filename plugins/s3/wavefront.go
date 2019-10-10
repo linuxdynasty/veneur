@@ -49,9 +49,9 @@ func (w *WaveFrontEncoder) KeyName(hostname string) (string, error) {
 func createPointTags(tags []string) (pointTags string, err error) {
 	var sb strings.Builder
 	for _, keyPair := range tags {
-		tag := strings.Split(keyPair, ":")
+		tag := strings.SplitN(keyPair, ":", 2)
 		if len(tag) != 2 {
-			err = fmt.Errorf("Did not produce a key pair of name and value %s", tag)
+			return pointTags, fmt.Errorf("Did not produce a key pair of name and value %s: length = %d", tag, len(tag))
 		}
 		sb.WriteString(fmt.Sprintf("%s=\"%s\" ", tag[0], tag[1]))
 	}
