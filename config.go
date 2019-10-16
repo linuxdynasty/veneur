@@ -60,6 +60,10 @@ type Config struct {
 	ObjectiveSpanTimerName                    string    `yaml:"objective_span_timer_name"`
 	OmitEmptyHostname                         bool      `yaml:"omit_empty_hostname"`
 	Percentiles                               []float64 `yaml:"percentiles"`
+	PluginsOutput                             string    `yaml:"plugins_output"`
+	PluginsOutputCompressed                   bool      `yaml:"plugins_output_compressed"`
+	PluginsOutputFileNameStructure            string    `yaml:"plugins_output_file_name_structure"`
+	PluginsOutputNameType                     string    `yaml:"plugins_output_name_type"`
 	ReadBufferSizeBytes                       int       `yaml:"read_buffer_size_bytes"`
 	SentryDsn                                 string    `yaml:"sentry_dsn"`
 	SignalfxAPIKey                            string    `yaml:"signalfx_api_key"`

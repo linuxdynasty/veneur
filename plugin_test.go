@@ -20,8 +20,12 @@ import (
 )
 
 type dummyPlugin struct {
-	logger *logrus.Logger
-	flush  func(context.Context, []samplers.InterMetric) error
+	logger   *logrus.Logger
+	flush    func(context.Context, []samplers.InterMetric) error
+	S3Bucket string
+	Hostname string
+	Interval float64
+	Encoder  s3p.Encoder
 }
 
 func (dp *dummyPlugin) Flush(ctx context.Context, metrics []samplers.InterMetric) error {
@@ -53,7 +57,17 @@ func TestGlobalServerPluginFlush(t *testing.T) {
 	f := newFixture(t, config, nil, nil)
 	defer f.Close()
 
-	dp := &dummyPlugin{logger: log}
+	dp := &dummyPlugin{
+		logger:   log,
+		Hostname: "test",
+		Interval: 10,
+		Encoder: &s3p.WaveFrontEncoder{
+			FileNameExtension: "",
+			Compress:          false,
+			FileNameStructure: "",
+			FileNameType:      "uuid",
+		},
+	}
 
 	dp.flush = func(ctx context.Context, metrics []samplers.InterMetric) error {
 		assert.Equal(t, len(expectedMetrics), len(metrics))
@@ -142,7 +156,21 @@ func TestGlobalServerS3PluginFlush(t *testing.T) {
 		return &s3.PutObjectOutput{ETag: aws.String("912ec803b2ce49e4a541068d495ab570")}, nil
 	})
 
-	s3p := &s3p.S3Plugin{Logger: log, Svc: client, Interval: 10}
+	s3p := &s3p.S3Plugin{
+		Logger:   log,
+		Svc:      client,
+		S3Bucket: "test",
+		Hostname: "",
+		Interval: 10,
+		Encoder: &s3p.CSVEncoder{
+			IncludeHeaders:    false,
+			Delimiter:         '\t',
+			FileNameExtension: "tsv",
+			Compress:          true,
+			FileNameStructure: "date_time",
+			FileNameType:      "timestamp",
+		},
+	}
 
 	f.server.registerPlugin(s3p)
 

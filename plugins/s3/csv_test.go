@@ -2,6 +2,7 @@ package s3
 
 import (
 	"bytes"
+	"compress/gzip"
 	"encoding/csv"
 	"fmt"
 	"io"
@@ -12,6 +13,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stripe/veneur/samplers"
+	. "github.com/stripe/veneur/testhelpers"
 )
 
 type CSVTestCase struct {
@@ -114,4 +116,85 @@ func assertReadersEqual(t *testing.T, expected io.Reader, actual io.Reader) {
 	}
 
 	assert.Equal(t, string(bts), string(bts2))
+}
+
+func TestEncodeMetricsCSVCompressed(t *testing.T) {
+	const ExpectedHeader = "Name\tTags\tMetricType\tVeneurHostname\tInterval\tTimestamp\tValue\tPartition"
+	const Delimiter = '\t'
+	const VeneurHostname = "testbox-c3eac9"
+
+	testCases := CSVTestCases()
+
+	metrics := make([]samplers.InterMetric, len(testCases))
+	for i, tc := range testCases {
+		metrics[i] = tc.InterMetric
+	}
+
+	c, err := EncodeInterMetricsCSV(metrics, Delimiter, true, VeneurHostname, 10, true)
+	assert.NoError(t, err)
+	gzr, err := gzip.NewReader(c)
+	assert.NoError(t, err)
+	r := csv.NewReader(gzr)
+	r.FieldsPerRecord = 8
+	r.Comma = Delimiter
+
+	// first line should always contain header information
+	header, err := r.Read()
+	assert.NoError(t, err)
+	assert.Equal(t, ExpectedHeader, strings.Join(header, "\t"))
+
+	records, err := r.ReadAll()
+	assert.NoError(t, err)
+
+	assert.Equal(t, len(metrics), len(records), "Expected %d records and got %d", len(metrics), len(records))
+	for i, tc := range testCases {
+		record := records[i]
+		t.Run(tc.Name, func(t *testing.T) {
+			for j, cell := range record {
+				if strings.ContainsRune(cell, Delimiter) {
+					record[j] = `"` + cell + `"`
+				}
+			}
+			AssertReadersEqual(t, testCases[i].Row, strings.NewReader(strings.Join(record, "\t")+"\n"))
+		})
+	}
+}
+func TestEncodeMetricsCSVUnCompressed(t *testing.T) {
+	const ExpectedHeader = "Name\tTags\tMetricType\tVeneurHostname\tInterval\tTimestamp\tValue\tPartition"
+	const Delimiter = '\t'
+	const VeneurHostname = "testbox-c3eac9"
+
+	testCases := CSVTestCases()
+
+	metrics := make([]samplers.InterMetric, len(testCases))
+	for i, tc := range testCases {
+		metrics[i] = tc.InterMetric
+	}
+
+	c, err := EncodeInterMetricsCSV(metrics, Delimiter, true, VeneurHostname, 10, false)
+	assert.NoError(t, err)
+	r := csv.NewReader(c)
+	r.FieldsPerRecord = 8
+	r.Comma = Delimiter
+
+	// first line should always contain header information
+	header, err := r.Read()
+	assert.NoError(t, err)
+	assert.Equal(t, ExpectedHeader, strings.Join(header, "\t"))
+
+	records, err := r.ReadAll()
+	assert.NoError(t, err)
+
+	assert.Equal(t, len(metrics), len(records), "Expected %d records and got %d", len(metrics), len(records))
+	for i, tc := range testCases {
+		record := records[i]
+		t.Run(tc.Name, func(t *testing.T) {
+			for j, cell := range record {
+				if strings.ContainsRune(cell, Delimiter) {
+					record[j] = `"` + cell + `"`
+				}
+			}
+			AssertReadersEqual(t, testCases[i].Row, strings.NewReader(strings.Join(record, "\t")+"\n"))
+		})
+	}
 }
