@@ -1,9 +1,12 @@
 package s3
 
 import (
+	"bytes"
+	"compress/gzip"
 	"encoding/csv"
 	"errors"
 	"fmt"
+	"io"
 	"strconv"
 	"strings"
 	"time"
@@ -48,12 +51,33 @@ var tsvSchema = [...]string{
 	TsvPartition:      "Partition",
 }
 
+// CVSEncoder represents a CSV and its extensions and how it will be stored.
+type CSVEncoder struct {
+	IncludeHeaders    bool   // Include headers in the CSV file.
+	Delimiter         rune   // Any type of delimiter to use in a CSV.
+	FileNameType      string // Either uuid or timestamp.
+	FileNameExtension string // `.csv` or `.tsv`
+	FileNameStructure string // `date_time` or `""`.
+	Compress          bool   // Compress and add `.gz` extension.
+}
+
+// Encode is an interface to EncodeInterMetricsCSV
+func (c *CSVEncoder) Encode(metrics []samplers.InterMetric, hostname string, interval float64) (io.ReadSeeker, error) {
+	return EncodeInterMetricsCSV(metrics, c.Delimiter, c.IncludeHeaders, hostname, interval, c.Compress)
+}
+
+// KeyName is an interface to KeyName
+func (c *CSVEncoder) KeyName(hostname string) (string, error) {
+	tNow := time.Now()
+	return KeyName(hostname, c.FileNameStructure, c.FileNameType, c.FileNameExtension, c.Compress, tNow)
+}
+
 // EncodeInterMetricCSV generates a newline-terminated CSV row that describes
 // the data represented by the InterMetric.
 // The caller is responsible for setting w.Comma as the appropriate delimiter.
 // For performance, encodeCSV does not flush after every call; the caller is
 // expected to flush at the end of the operation cycle
-func EncodeInterMetricCSV(d samplers.InterMetric, w *csv.Writer, partitionDate *time.Time, hostName string, interval int) error {
+func EncodeInterMetricCSV(d samplers.InterMetric, w *csv.Writer, partitionDate *time.Time, hostName string, interval float64) error {
 	// TODO(aditya) some better error handling for this
 	// to guarantee that the result is proper JSON
 	tags := "{" + strings.Join(d.Tags, ",") + "}"
@@ -62,7 +86,7 @@ func EncodeInterMetricCSV(d samplers.InterMetric, w *csv.Writer, partitionDate *
 	metricValue := d.Value
 	switch d.Type {
 	case samplers.CounterMetric:
-		metricValue = d.Value / float64(interval)
+		metricValue = d.Value / interval
 		metricType = "rate"
 
 	case samplers.GaugeMetric:
@@ -77,7 +101,7 @@ func EncodeInterMetricCSV(d samplers.InterMetric, w *csv.Writer, partitionDate *
 		TsvName:           d.Name,
 		TsvTags:           tags,
 		TsvMetricType:     metricType,
-		TsvInterval:       strconv.Itoa(interval),
+		TsvInterval:       strconv.FormatFloat(interval, 'f', -1, 64),
 		TsvVeneurHostname: hostName,
 		TsvValue:          strconv.FormatFloat(metricValue, 'f', -1, 64),
 
@@ -89,6 +113,53 @@ func EncodeInterMetricCSV(d samplers.InterMetric, w *csv.Writer, partitionDate *
 
 	w.Write(fields[:])
 	return w.Error()
+}
+
+// EncodeInterMetricsCSV returns a reader containing either the gzipped or plain text CSV representation of the
+// InterMetric data, one row per InterMetric.
+// the AWS sdk requires seekable input, so we return a ReadSeeker here
+func EncodeInterMetricsCSV(metrics []samplers.InterMetric, delimiter rune, includeHeaders bool, hostname string, interval float64, compress bool) (io.ReadSeeker, error) {
+	b := &bytes.Buffer{}
+	var w *csv.Writer
+	var gzw *gzip.Writer
+	if compress == true {
+		gzw = gzip.NewWriter(b)
+		w = csv.NewWriter(gzw)
+	} else {
+		w = csv.NewWriter(b)
+	}
+	w.Comma = delimiter
+
+	if includeHeaders {
+		// Write the headers first
+		headers := [...]string{
+			// the order here doesn't actually matter
+			// as long as the keys are right
+			TsvName:           TsvName.String(),
+			TsvTags:           TsvTags.String(),
+			TsvMetricType:     TsvMetricType.String(),
+			TsvInterval:       TsvInterval.String(),
+			TsvVeneurHostname: TsvVeneurHostname.String(),
+			TsvValue:          TsvValue.String(),
+			TsvTimestamp:      TsvTimestamp.String(),
+			TsvPartition:      TsvPartition.String(),
+		}
+
+		w.Write(headers[:])
+	}
+
+	// TODO avoid edge case at midnight
+	partitionDate := time.Now()
+	for _, metric := range metrics {
+		EncodeInterMetricCSV(metric, w, &partitionDate, hostname, interval)
+	}
+	w.Flush()
+	if compress == true {
+		gzw.Flush()
+		gzw.Close()
+	}
+
+	return bytes.NewReader(b.Bytes()), w.Error()
 }
 
 // String returns the field Name.
