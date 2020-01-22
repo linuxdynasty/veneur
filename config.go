@@ -8,7 +8,6 @@ type Config struct {
 	AwsSecretAccessKey                     string   `yaml:"aws_secret_access_key"`
 	BlockProfileRate                       int      `yaml:"block_profile_rate"`
 	CountUniqueTimeseries                  bool     `yaml:"count_unique_timeseries"`
-	MetricsNameSpace                       string   `yaml:"metrics_name_space"`
 	DatadogAPIHostname                     string   `yaml:"datadog_api_hostname"`
 	DatadogAPIKey                          string   `yaml:"datadog_api_key"`
 	DatadogExcludeTagsPrefixByPrefixMetric []struct {
@@ -59,6 +58,7 @@ type Config struct {
 	LightstepNumClients                       int       `yaml:"lightstep_num_clients"`
 	LightstepReconnectPeriod                  string    `yaml:"lightstep_reconnect_period"`
 	MetricMaxLength                           int       `yaml:"metric_max_length"`
+	MetricsNameSpace                          string   `yaml:"metrics_name_space"`
 	MutexProfileFraction                      int       `yaml:"mutex_profile_fraction"`
 	NumReaders                                int       `yaml:"num_readers"`
 	NumSpanWorkers                            int       `yaml:"num_span_workers"`
