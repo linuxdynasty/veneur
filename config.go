@@ -58,7 +58,7 @@ type Config struct {
 	LightstepNumClients                       int       `yaml:"lightstep_num_clients"`
 	LightstepReconnectPeriod                  string    `yaml:"lightstep_reconnect_period"`
 	MetricMaxLength                           int       `yaml:"metric_max_length"`
-	MetricsNameSpace                          string   `yaml:"metrics_name_space"`
+	MetricsNameSpace                          string    `yaml:"metrics_name_space"`
 	MutexProfileFraction                      int       `yaml:"mutex_profile_fraction"`
 	NumReaders                                int       `yaml:"num_readers"`
 	NumSpanWorkers                            int       `yaml:"num_span_workers"`
