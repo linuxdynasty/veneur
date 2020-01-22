@@ -298,7 +298,7 @@ func NewFromConfig(logger *logrus.Logger, conf Config) (*Server, error) {
 	if err != nil {
 		return ret, err
 	}
-	stats.Namespace = "veneur."
+	stats.Namespace = conf.MetricsNameSpace
 
 	scopes, err := scopesFromConfig(conf)
 	if err != nil {

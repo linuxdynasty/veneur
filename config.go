@@ -8,6 +8,7 @@ type Config struct {
 	AwsSecretAccessKey                     string   `yaml:"aws_secret_access_key"`
 	BlockProfileRate                       int      `yaml:"block_profile_rate"`
 	CountUniqueTimeseries                  bool     `yaml:"count_unique_timeseries"`
+	MetricsNameSpace                       string   `yaml:"metrics_name_space"`
 	DatadogAPIHostname                     string   `yaml:"datadog_api_hostname"`
 	DatadogAPIKey                          string   `yaml:"datadog_api_key"`
 	DatadogExcludeTagsPrefixByPrefixMetric []struct {

@@ -16,6 +16,7 @@ var defaultConfig = Config{
 	DatadogFlushMaxPerBody:         25000,
 	Interval:                       "10s",
 	MetricMaxLength:                4096,
+	MetricsNameSpace:               "veneur.",
 	PluginsOutput:                  "csv",
 	PluginsOutputCompressed:        false,
 	PluginsOutputNameType:          "timestamp",
@@ -30,6 +31,7 @@ var defaultProxyConfig = ProxyConfig{
 	TracingClientCapacity:        1024,
 	TracingClientFlushInterval:   "500ms",
 	TracingClientMetricsInterval: "1s",
+	MetricsNameSpace:             "veneur_proxy.",
 }
 
 // ReadProxyConfig unmarshals the proxy config file and slurps in its data.
@@ -54,6 +56,9 @@ func (c *ProxyConfig) applyDefaults() {
 			"new value", defaultProxyConfig.MaxIdleConnsPerHost,
 		).Warn("max_idle_conns_per_host being unset may lead to unsafe operations, defaulting!")
 		c.MaxIdleConnsPerHost = defaultProxyConfig.MaxIdleConnsPerHost
+	}
+	if c.MetricsNameSpace == "" {
+		c.MetricsNameSpace = defaultProxyConfig.MetricsNameSpace
 	}
 	if c.TracingClientCapacity == 0 {
 		c.TracingClientCapacity = defaultProxyConfig.TracingClientCapacity
@@ -155,6 +160,9 @@ func readConfig(r io.Reader) (Config, error) {
 func (c *Config) applyDefaults() {
 	if len(c.Aggregates) == 0 {
 		c.Aggregates = defaultConfig.Aggregates
+	}
+	if c.MetricsNameSpace == "" {
+		c.MetricsNameSpace = defaultConfig.MetricsNameSpace
 	}
 	if c.Hostname == "" && !c.OmitEmptyHostname {
 		c.Hostname, _ = os.Hostname()
