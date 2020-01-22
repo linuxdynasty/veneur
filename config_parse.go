@@ -17,7 +17,7 @@ var defaultConfig = Config{
 	Interval:                       "10s",
 	MetricMaxLength:                4096,
 	PluginsOutput:                  "csv",
-	PluginsOutputCompressed:        true,
+	PluginsOutputCompressed:        false,
 	PluginsOutputNameType:          "timestamp",
 	ReadBufferSizeBytes:            1048576 * 2, // 2 MiB
 	SpanChannelCapacity:            100,

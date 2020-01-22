@@ -543,6 +543,7 @@ aws_access_key_id: ""
 aws_secret_access_key: ""
 aws_region: ""
 aws_s3_bucket: ""
+plugins_output_compressed: true
 
 # == LocalFile Output ==
 # Include this if you want to archive data to a local file (which should then be rotated/cleaned)
