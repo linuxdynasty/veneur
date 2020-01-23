@@ -28,10 +28,10 @@ var defaultConfig = Config{
 
 var defaultProxyConfig = ProxyConfig{
 	MaxIdleConnsPerHost:          100,
+	MetricsNameSpace:             "veneur_proxy.",
 	TracingClientCapacity:        1024,
 	TracingClientFlushInterval:   "500ms",
 	TracingClientMetricsInterval: "1s",
-	MetricsNameSpace:             "veneur_proxy.",
 }
 
 // ReadProxyConfig unmarshals the proxy config file and slurps in its data.
@@ -161,9 +161,6 @@ func (c *Config) applyDefaults() {
 	if len(c.Aggregates) == 0 {
 		c.Aggregates = defaultConfig.Aggregates
 	}
-	if c.MetricsNameSpace == "" {
-		c.MetricsNameSpace = defaultConfig.MetricsNameSpace
-	}
 	if c.Hostname == "" && !c.OmitEmptyHostname {
 		c.Hostname, _ = os.Hostname()
 	}
@@ -172,6 +169,9 @@ func (c *Config) applyDefaults() {
 	}
 	if c.MetricMaxLength == 0 {
 		c.MetricMaxLength = defaultConfig.MetricMaxLength
+	}
+	if c.MetricsNameSpace == "" {
+		c.MetricsNameSpace = defaultConfig.MetricsNameSpace
 	}
 	if c.PluginsOutput == "" {
 		c.PluginsOutput = defaultConfig.PluginsOutput
