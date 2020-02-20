@@ -58,6 +58,7 @@ type Config struct {
 	LightstepNumClients                       int       `yaml:"lightstep_num_clients"`
 	LightstepReconnectPeriod                  string    `yaml:"lightstep_reconnect_period"`
 	MetricMaxLength                           int       `yaml:"metric_max_length"`
+	MetricsNameSpace                          string    `yaml:"metrics_name_space"`
 	MutexProfileFraction                      int       `yaml:"mutex_profile_fraction"`
 	NumReaders                                int       `yaml:"num_readers"`
 	NumSpanWorkers                            int       `yaml:"num_span_workers"`
@@ -65,6 +66,10 @@ type Config struct {
 	ObjectiveSpanTimerName                    string    `yaml:"objective_span_timer_name"`
 	OmitEmptyHostname                         bool      `yaml:"omit_empty_hostname"`
 	Percentiles                               []float64 `yaml:"percentiles"`
+	PluginsOutput                             string    `yaml:"plugins_output"`
+	PluginsOutputCompressed                   bool      `yaml:"plugins_output_compressed"`
+	PluginsOutputFileNameStructure            string    `yaml:"plugins_output_file_name_structure"`
+	PluginsOutputNameType                     string    `yaml:"plugins_output_name_type"`
 	ReadBufferSizeBytes                       int       `yaml:"read_buffer_size_bytes"`
 	SentryDsn                                 string    `yaml:"sentry_dsn"`
 	SignalfxAPIKey                            string    `yaml:"signalfx_api_key"`

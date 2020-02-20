@@ -214,7 +214,8 @@ func NewProxyFromConfig(logger *logrus.Logger, conf ProxyConfig) (p Proxy, err e
 		if err != nil {
 			return p, err
 		}
-		stats.Namespace = "veneur_proxy."
+		stats.Namespace = conf.MetricsNameSpace
+
 		format := "ssf_format:packet"
 		if strings.HasPrefix(conf.SsfDestinationAddress, "unix://") {
 			format = "ssf_format:framed"

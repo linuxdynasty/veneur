@@ -223,7 +223,7 @@ type Gauge struct {
 
 // Sample takes on whatever value is passed in as a sample.
 func (g *Gauge) Sample(sample float64, sampleRate float32) {
-	g.value = sample
+	g.value += sample * float64(1/sampleRate)
 }
 
 // Flush generates an InterMetric from the current state of this gauge.

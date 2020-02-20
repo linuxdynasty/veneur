@@ -76,7 +76,7 @@ func main() {
 
 		logrus.WithError(e).Fatal("Could not initialize server")
 	}
-	ssf.NamePrefix = "veneur."
+	ssf.NamePrefix = conf.MetricsNameSpace
 
 	defer func() {
 		veneur.ConsumePanic(server.Sentry, server.TraceClient, server.Hostname, recover())

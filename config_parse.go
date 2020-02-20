@@ -16,6 +16,10 @@ var defaultConfig = Config{
 	DatadogFlushMaxPerBody:         25000,
 	Interval:                       "10s",
 	MetricMaxLength:                4096,
+	MetricsNameSpace:               "veneur.",
+	PluginsOutput:                  "csv",
+	PluginsOutputCompressed:        false,
+	PluginsOutputNameType:          "timestamp",
 	ReadBufferSizeBytes:            1048576 * 2, // 2 MiB
 	SpanChannelCapacity:            100,
 	SplunkHecBatchSize:             100,
@@ -24,6 +28,7 @@ var defaultConfig = Config{
 
 var defaultProxyConfig = ProxyConfig{
 	MaxIdleConnsPerHost:          100,
+	MetricsNameSpace:             "veneur_proxy.",
 	TracingClientCapacity:        1024,
 	TracingClientFlushInterval:   "500ms",
 	TracingClientMetricsInterval: "1s",
@@ -51,6 +56,9 @@ func (c *ProxyConfig) applyDefaults() {
 			"new value", defaultProxyConfig.MaxIdleConnsPerHost,
 		).Warn("max_idle_conns_per_host being unset may lead to unsafe operations, defaulting!")
 		c.MaxIdleConnsPerHost = defaultProxyConfig.MaxIdleConnsPerHost
+	}
+	if c.MetricsNameSpace == "" {
+		c.MetricsNameSpace = defaultProxyConfig.MetricsNameSpace
 	}
 	if c.TracingClientCapacity == 0 {
 		c.TracingClientCapacity = defaultProxyConfig.TracingClientCapacity
@@ -161,6 +169,15 @@ func (c *Config) applyDefaults() {
 	}
 	if c.MetricMaxLength == 0 {
 		c.MetricMaxLength = defaultConfig.MetricMaxLength
+	}
+	if c.MetricsNameSpace == "" {
+		c.MetricsNameSpace = defaultConfig.MetricsNameSpace
+	}
+	if c.PluginsOutput == "" {
+		c.PluginsOutput = defaultConfig.PluginsOutput
+	}
+	if c.PluginsOutputNameType == "" {
+		c.PluginsOutputNameType = defaultConfig.PluginsOutputNameType
 	}
 	if c.ReadBufferSizeBytes == 0 {
 		c.ReadBufferSizeBytes = defaultConfig.ReadBufferSizeBytes

@@ -15,6 +15,7 @@ type ProxyConfig struct {
 	IdleConnectionTimeout        string `yaml:"idle_connection_timeout"`
 	MaxIdleConns                 int    `yaml:"max_idle_conns"`
 	MaxIdleConnsPerHost          int    `yaml:"max_idle_conns_per_host"`
+	MetricsNameSpace             string `yaml:"metrics_name_space"`
 	RuntimeMetricsInterval       string `yaml:"runtime_metrics_interval"`
 	SentryDsn                    string `yaml:"sentry_dsn"`
 	SsfDestinationAddress        string `yaml:"ssf_destination_address"`

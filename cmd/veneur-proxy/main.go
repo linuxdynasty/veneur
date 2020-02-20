@@ -37,7 +37,7 @@ func main() {
 	proxy, err := veneur.NewProxyFromConfig(logger, conf)
 	veneur.SetLogger(logger)
 
-	ssf.NamePrefix = "veneur_proxy."
+	ssf.NamePrefix = conf.MetricsNameSpace
 
 	if err != nil {
 		logrus.WithError(err).Fatal("Could not initialize proxy")
